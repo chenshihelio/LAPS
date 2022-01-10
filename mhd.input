@@ -1,0 +1,52 @@
+&genr
+   tmax = 2.0
+   dtout = 0.2
+   dtrms = 0.01
+/
+&numerical
+   cfl = 0.3
+   dealias_option = 1
+/
+&prl
+   ndim_parallel = 2
+/
+&grid
+   nx = 128
+   ny = 128
+   nz = 128
+   Lx = 1.0
+   Ly = 1.0
+   Lz = 1.0
+/
+&field
+   ifield = 3
+   Bx0 = -0.495
+   By0 = 0.180
+   Bz0 = -0.85
+   press0 = 3.04
+/
+&pert
+   ipert = 7
+   db0 = 0.2
+   dv0 = 0.15
+   drho0 = 0.1
+   nmodex = 16
+   nmodey = 16
+   nmodez = 16
+/
+&phys
+   adiabatic_index = 1.666667
+   if_resis = T
+   resistivity = 1e-4
+   if_visc = T
+   viscosity = 1e-4
+/
+&AEB
+   if_AEB = T
+   radius0 = 4.854
+   Ur0 = 3.59
+/
+&Hall
+   if_Hall = F 
+   ion_inertial_length = 0
+/
