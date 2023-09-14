@@ -15,6 +15,7 @@ module AEBmod
 
         subroutine AEB_initialize
             implicit none 
+            logical :: file_exist
 
             radius = radius0 
 
@@ -32,7 +33,12 @@ module AEBmod
             sin_cor_ang = sin(corotating_angle)
 
             if (ipe==0) then 
-                open(FILE='EBM_info.dat',UNIT=30,STATUS='REPLACE',ACTION='WRITE')
+                inquire(FILE='EBM_info.dat', exist=file_exist)
+                if (file_exist) then 
+                    open(FILE='EBM_info.dat',UNIT=30,STATUS='OLD',ACTION='WRITE',POSITION='APPEND')
+                else 
+                    open(FILE='EBM_info.dat',UNIT=30,STATUS='REPLACE',ACTION='WRITE')
+                endif
                 close(30)
             endif
         end subroutine AEB_initialize

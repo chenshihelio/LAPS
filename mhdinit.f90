@@ -45,8 +45,13 @@ module mhdinit
 
     !user-defined-----------------------------------------
     real :: U_fast,U_slow,n_fast,n_slow,press0,shear_width,bx0,by0,&
-        bz0,db0,dbx,dby,dbz, in_out_ratio = 1.0, dv0, drho0
+        bz0,db0,dbx,dby,dbz, in_out_ratio = 1.0, dv0 = 0, drho0 = 0
     integer :: nmode = 16, nmodex = 16, nmodey = 16,nmodez = 16
+
+    real :: jet_width=1.0, Vjet = 0.3 
+    integer :: wave_number_jet = 1
+
+    real :: B0_SB,dB_SB,R0_SB,R1_SB,H_SB,Rm_SB,Rd_SB
 
     contains 
 
@@ -181,6 +186,7 @@ module mhdinit
             integer :: ix, iy, iz, ivar, ik, &
                 ixmin,ixmax,iymin,iymax,izmin,izmax
             real :: zlow,zcent,zup,ylow,ycent,yup,ninf = 1.0
+            real :: r_yz
 
             ixmin = 1
             ixmax = nx 
@@ -267,6 +273,25 @@ module mhdinit
                     uu(:,iy,:,1) = ninf
                 enddo
 
+            Case(5)
+                !Add a jet along x direction
+                uu(:,:,:,5) = bx0
+                uu(:,:,:,6) = 0
+                uu(:,:,:,7) = 0
+                uu(:,:,:,8) = press0 
+
+
+                do iz=izmin,izmax
+                    do iy=iymin,iymax
+                        ! uu(:,iy,iz,2) = Vjet * exp(- 0.5 *((zgrid(iz) - 0.5*Lz) &
+                        !     /(jet_width))**2 - 0.5 * ((ygrid(iy) - 0.5*Ly) & 
+                        !     /(jet_width))**2)
+
+                        r_yz = sqrt((zgrid(iz))**2 + (ygrid(iy))**2)
+                        uu(:,iy,iz,2) = Vjet/2 * (1 - tanh((r_yz - 1)/0.1)) 
+                    enddo
+                enddo
+
             case default
                 continue
             end select
@@ -281,11 +306,14 @@ module mhdinit
             integer :: ixmin,ixmax,iymin,iymax,izmin,izmax
             real,allocatable,dimension(:) :: phs,phs1,phs2
             integer :: ir,ikx,iky,ikz
+            integer,dimension(12) :: ir_arr
             real :: amp_x, amp_y, amp_z
             real,dimension(3) :: direction_perp
             real :: kmod, B0mod, k_radius
             real :: pph, modulation_y, modulation_y_deriv, ylow,ycent,yup
             real :: ph_z, ph_y, ph_x, ph0, ph1, ph2, correlation_vb = 0
+            real :: p_SB, q_SB, dpdr_SB, Bz0_SB,x_SB,y_SB,z_SB,r_SB,&
+                    Bx_SB,By_SB,Bz_SB,Br_SB,Bphi_SB,C_SB,phi_SB
 
 
             ixmin = 1
@@ -299,20 +327,18 @@ module mhdinit
 
             case(1)
                 !circularly polarized alfven wave
-                kx =  2*pi/Lx
+                kx =  2*pi/Lx * wave_number_jet
                 do ix=ixmin,ixmax 
                     !z component
-                    uu(ix,:,:,7) = uu(ix,:,:,7) - db0 * sqrt(uu(ix,:,:,1)) &
+                    uu(ix,:,:,7) = uu(ix,:,:,7) - db0  &
                         * sin(kx * xgrid(ix))
-                    uu(ix,:,:,4) = uu(ix,:,:,4) + db0 * sin(kx * xgrid(ix))
+                    uu(ix,:,:,4) = uu(ix,:,:,4) + db0/sqrt(uu(ix,:,:,1)) * sin(kx * xgrid(ix))
                     !x&y component
-                    uu(ix,:,:,2) = uu(ix,:,:,2) + db0 * cos(kx * xgrid(ix)) * sin_cor_ang
-                    uu(ix,:,:,5) = uu(ix,:,:,5) - db0 * sqrt(uu(ix,:,:,1)) &
-                        * cos(kx * xgrid(ix)) * sin_cor_ang
+                    uu(ix,:,:,2) = uu(ix,:,:,2) + db0/sqrt(uu(ix,:,:,1)) * cos(kx * xgrid(ix)) * sin_cor_ang
+                    uu(ix,:,:,5) = uu(ix,:,:,5) - db0 * cos(kx * xgrid(ix)) * sin_cor_ang
 
-                    uu(ix,:,:,3) = uu(ix,:,:,3) + db0 * cos(kx * xgrid(ix)) * cos_cor_ang
-                    uu(ix,:,:,6) = uu(ix,:,:,6) - db0 * sqrt(uu(ix,:,:,1)) &
-                        * cos(kx * xgrid(ix)) * cos_cor_ang
+                    uu(ix,:,:,3) = uu(ix,:,:,3) + db0/sqrt(uu(ix,:,:,1)) * cos(kx * xgrid(ix)) * cos_cor_ang
+                    uu(ix,:,:,6) = uu(ix,:,:,6) - db0 * cos(kx * xgrid(ix)) * cos_cor_ang
                 enddo
 
             case(2)
@@ -671,23 +697,32 @@ module mhdinit
                 ! random perturbations in U, B, and rho
 
 
-                correlation_vb = -0.2
+                correlation_vb = -0.05
 
                 nmode = (2 * nmodex + 1) * (2 * nmodez+1)  * (2 * nmodey+1)
                 allocate(phs(nmode),phs1(nmode),phs2(nmode))
 
                 ir = 1
-                call random_seed(ir)
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
                 call random_number(phs)
                 phs(:) = phs(:) * 2 * pi 
 
                 ir = 16
-                call random_seed(ir)
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
                 call random_number(phs1)
                 phs1(:) = phs1(:) * 2 * pi 
 
                 ir = 32
-                call random_seed(ir)
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
                 call random_number(phs2)
                 phs2(:) = phs2(:) * 2 * pi 
             
@@ -743,49 +778,49 @@ module mhdinit
                                         pph = ph_x + ph_y + ph_z + ph0
         
                                         uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
-                                            (1-abs(correlation_vb)) * dv0 * cos(pph) &
-                                            / sqrt(k_radius) * direction_perp(1)
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(1)
 
                                         uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
-                                            (1-abs(correlation_vb)) * dv0 * cos(pph) &
-                                            / sqrt(k_radius) * direction_perp(2)
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(2)
 
                                         uu(ix,iy,iz,4) = uu(ix,iy,iz,4) + &
-                                            (1-abs(correlation_vb)) * dv0 * cos(pph) &
-                                            / sqrt(k_radius) * direction_perp(3)
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(3)
 
                                         ! magnetic field
                                         pph = ph_x + ph_y + ph_z + ph1
 
                                         uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + db0 * cos(pph) &
-                                            /sqrt(k_radius) * direction_perp(1)
+                                            /sqrt(k_radius**3) * direction_perp(1)
 
                                         uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + db0 * cos(pph) &
-                                            /sqrt(k_radius) * direction_perp(2)
+                                            /sqrt(k_radius**3) * direction_perp(2)
 
                                         uu(ix,iy,iz,7) = uu(ix,iy,iz,7) + db0 * cos(pph) &
-                                            /sqrt(k_radius) * direction_perp(3)
+                                            /sqrt(k_radius**3) * direction_perp(3)
 
                                         ! velocity correlated
 
                                         uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
                                             correlation_vb * dv0 * cos(pph) &
-                                            / sqrt(k_radius) * direction_perp(1)
+                                            / sqrt(k_radius**3) * direction_perp(1)
 
                                         uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
                                             correlation_vb * dv0 * cos(pph) &
-                                            / sqrt(k_radius) * direction_perp(2)
+                                            / sqrt(k_radius**3) * direction_perp(2)
 
                                         uu(ix,iy,iz,4) = uu(ix,iy,iz,4) + &
                                             correlation_vb * dv0 * cos(pph) &
-                                            / sqrt(k_radius) * direction_perp(3)
+                                            / sqrt(k_radius**3) * direction_perp(3)
 
 
                                         ! density
                                         pph = ph_x + ph_y + ph_z + ph2
 
                                         uu(ix,iy,iz,1) = uu(ix,iy,iz,1) + drho0 * cos(pph) &
-                                            / sqrt(k_radius)
+                                            / sqrt(k_radius**3)
                                     enddo
                                 enddo
                             enddo
@@ -893,6 +928,106 @@ module mhdinit
                 ! enddo
 
 
+            case(8)
+                ! add a switchback ---------------
+                ! DO NOT set background magnetic field!
+
+                ! core part----
+                do iz=izmin,izmax 
+                    z_SB = zgrid(iz) - Lz/2
+                    do iy = iymin,iymax
+                        y_SB = ygrid(iy) - Ly/2
+
+                        r_SB = SQRT(y_SB**2 + z_SB**2)
+
+                        do ix = ixmin,ixmax  
+                            x_SB = xgrid(ix) - Lx/2
+                            
+                            ! note that here Bz is actually Bx
+                            Bz0_SB = B0_SB + dB_SB * exp(-((r_SB-R0_SB)/R1_SB)**2)
+                            
+                            Bz_SB = B0_SB + dB_SB * exp(-((r_SB-R0_SB)/R1_SB)**2 - (x_SB/H_SB)**2)
+                            C_SB = -(exp(-(R0_SB/R1_SB)**2) + sqrt(PI)*R0_SB/R1_SB*erf(R0_SB/R1_SB))
+                            
+                            if (r_SB < 1E-8) then
+                                phi_SB = 0.
+                                Br_SB = 0.
+                                Bphi_SB = 0.0
+                            else 
+                                phi_SB = ATAN2(z_SB,y_SB)
+                                Br_SB = -dB_SB * (x_SB * R1_SB**2)/(r_SB * H_SB**2) * &
+                                    exp(-(x_SB/H_SB)**2) * (exp(-((r_SB-R0_SB)/R1_SB)**2) + &
+                                    sqrt(pi)*R0_SB/R1_SB * erf((R0_SB-r_SB)/R1_SB) + C_SB)
+                                
+
+                                ! correction to fix the boundary jump
+                                if (r_SB<Rm_SB) then 
+                                    p_SB = 1
+                                    dpdr_SB = 0
+                                    q_SB = 1
+                                else
+                                    p_SB = exp(-((r_SB-Rm_SB)/Rd_SB)**2)
+                                    dpdr_SB = -2*(r_SB-Rm_SB)/Rd_SB**2 * p_SB
+
+                                    q_SB = Bz0_SB/Bz_SB * (1 + 1/Bz0_SB * (p_SB * (Bz_SB-Bz0_SB) - &
+                                    (dpdr_SB * dB_SB * R1_SB**2/r_SB * (exp(-((r_SB-R0_SB)/R1_SB)**2) + &
+                                        sqrt(pi)*R0_SB/R1_SB*erf((R0_SB-r_SB)/R1_SB) + C_SB) &
+                                        * 0.5 * (exp(-(x_SB/H_SB)**2)-1))  ))
+                                endif 
+
+                                
+                                Br_SB = Br_SB * p_SB
+                                Bz_SB = Bz_SB * q_SB 
+
+
+                                IF (Bz_SB**2 + Br_SB**2 < B0_SB**2) THEN
+                                    Bphi_SB = sqrt(B0_SB**2 - Br_SB**2 - Bz_SB**2)
+                                else
+                                    Bphi_SB = 0.0
+                                    ! need to modify pressure to maintain constant Ptot
+                                    uu(ix,iy,iz,8) = uu(ix,iy,iz,8) - 0.5*(Bz_SB**2 + Br_SB**2 - B0_SB**2)
+                                ENDIF 
+                            endif 
+                            
+                            Bx_SB = Br_SB * cos(phi_SB) - Bphi_SB * sin(phi_SB)
+                            By_SB = Br_SB * sin(phi_SB) + Bphi_SB * cos(phi_SB)
+
+
+                            ! note: we have changed the order of variables!!!
+                            ! Bz_SB should be Bx
+                            ! Bx_SB should be By
+                            ! By_SB should be Bz
+                            uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + Bz_SB 
+                            uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + Bx_SB 
+                            uu(ix,iy,iz,7) = uu(ix,iy,iz,7) + By_SB 
+                        enddo
+                    enddo
+                enddo
+
+                
+
+                ! add anti-correlated velocity fluctuation
+                do iz=izmin,izmax 
+                    do iy = iymin,iymax
+                        do ix = ixmin,ixmax  
+                            uu(ix,iy,iz,2) = uu(ix,iy,iz,2) - uu(ix,iy,iz,5)/SQRT(uu(ix,iy,iz,1))
+                            uu(ix,iy,iz,3) = uu(ix,iy,iz,3) - uu(ix,iy,iz,6)/SQRT(uu(ix,iy,iz,1))
+                            uu(ix,iy,iz,4) = uu(ix,iy,iz,4) - uu(ix,iy,iz,7)/SQRT(uu(ix,iy,iz,1))
+                        enddo
+                    enddo
+                enddo
+
+
+            case(999)
+                !debug
+                do iz = izmin, izmax 
+                    do iy = iymin, iymax
+                        do ix = ixmin, ixmax
+                            uu(ix,iy,iz,:) = sqrt((ygrid(iy)-Ly/2.0)**2 &
+                                + (zgrid(iz)-Lz/2.0)**2)
+                        enddo
+                    enddo
+                enddo
             case default
                 continue 
             end select

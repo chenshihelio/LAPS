@@ -13,7 +13,7 @@ program mhd
 
     integer :: ix,iy,iz, ivar, ixmin,ixmax,iymin,iymax,izmin,izmax
     real :: dt, tmax, dtout, dtrms, dtlog
-    real :: delta_clocktime_output = 60 * 25, clocktime, clocktime_output
+    real :: delta_clocktime_output = 60 * 50, clocktime, clocktime_output
     integer :: if_savefile = 0
     real :: tout, toutrms, tlog
     integer :: iout = 0 
@@ -34,9 +34,9 @@ program mhd
     namelist/grid/nx,ny,nz,Lx,Ly,Lz
     namelist/phys/adiabatic_index, if_resis,resistivity, if_visc, viscosity
     namelist/field/ifield,B0,a0,shear_width,press0,U_fast,U_slow,&
-        n_fast,n_slow,Bx0,By0,Bz0
+        n_fast,n_slow,Bx0,By0,Bz0,jet_width,Vjet
     namelist/pert/ipert,db0,nmode,nmodex,nmodey,nmodez,dbx,dbz,in_out_ratio, &
-        dv0,drho0
+        dv0,drho0,wave_number_jet,B0_SB,dB_SB,R0_SB,R1_SB,H_SB,Rm_SB,Rd_SB
     namelist/AEB/if_AEB,radius0,Ur0,if_corotating,corotating_angle
     namelist/Hall/if_hall, ion_inertial_length
 

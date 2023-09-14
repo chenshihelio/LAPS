@@ -1,38 +1,39 @@
 &genr
-   tmax = 2.0
-   dtout = 0.2
-   dtrms = 0.01
+   tmax = 20.0
+   dtout = 2.0
+   dtrms = 0.05
 /
 &numerical
-   cfl = 0.3
+   cfl = 0.5
    dealias_option = 1
 /
 &prl
    ndim_parallel = 2
 /
 &grid
-   nx = 128
-   ny = 128
-   nz = 128
-   Lx = 1.0
-   Ly = 1.0
-   Lz = 1.0
+   nx = 512
+   ny = 512
+   nz = 512
+   Lx = 24.0
+   Ly = 24.0
+   Lz = 24.0
 /
 &field
    ifield = 3
-   Bx0 = -0.495
-   By0 = 0.180
-   Bz0 = -0.85
-   press0 = 3.04
+   Bx0 = 0.
+   By0 = 0.
+   Bz0 = 0.
+   press0 = 1.0
 /
 &pert
-   ipert = 7
-   db0 = 0.2
-   dv0 = 0.15
-   drho0 = 0.1
-   nmodex = 16
-   nmodey = 16
-   nmodez = 16
+   ipert = 8
+   B0_SB = 1.
+   dB_SB = -2.
+   R0_SB = 2.
+   R1_SB = 0.5
+   H_SB = 3.
+   Rm_SB = 5.
+   Rd_SB = 1.5
 /
 &phys
    adiabatic_index = 1.666667
@@ -42,9 +43,9 @@
    viscosity = 1e-4
 /
 &AEB
-   if_AEB = T
-   radius0 = 4.854
-   Ur0 = 3.59
+   if_AEB = F
+   radius0 = 30.0
+   Ur0 = 1.167
 /
 &Hall
    if_Hall = F 

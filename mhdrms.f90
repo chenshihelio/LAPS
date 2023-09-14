@@ -14,6 +14,7 @@ module mhdrms
 
     subroutine rms_initialize
         implicit none 
+        logical :: file_exist
 
         allocate(uu_ave(nvar), uu_square_ave(nvar), uu_rms(nvar), &
             uu_ave_sum(nvar), uu_square_ave_sum(nvar), B0_ave(nvar))
@@ -25,7 +26,12 @@ module mhdrms
 
         !create the rms file
         if (ipe==0) then 
-            open(FILE='rms.dat',UNIT=30,STATUS='REPLACE',ACTION='WRITE')
+            inquire(FILE='rms.dat', exist=file_exist)
+            if (file_exist) then 
+                open(FILE='rms.dat',UNIT=30,STATUS='OLD',ACTION='WRITE',Position='APPEND')
+            else 
+                open(FILE='rms.dat',UNIT=30,STATUS='REPLACE',ACTION='WRITE')
+            endif 
             close(30)
         endif
     end subroutine rms_initialize

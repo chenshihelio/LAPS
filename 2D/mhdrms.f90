@@ -83,7 +83,7 @@ module mhdrms
                     uu_square_ave(5:7) = uu_square_ave(5:7) + ( &
                         uu(ix,iy,iz,5:7) + B0_ave(5:7))**2
                     uu_square_ave(8) = uu_square_ave(8) + ( &
-                        uu_prim(ix,iy,iz,4))**2
+                        uu_prim(ix,iy,iz,4))
                     
                 enddo
             enddo
