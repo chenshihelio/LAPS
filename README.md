@@ -9,4 +9,4 @@ Samples of Python scripts to read the output are also included.
 The code is open-source. You can use it freely but without gurantee. 
 
 <hr>
-TODO: Instructions on how to set up initial conditions and some .
+TODO: Instructions on how to set up initial conditions.
