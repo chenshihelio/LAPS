@@ -1,6 +1,6 @@
-# LAPSEB
+# LAPS
 
-LAPSEB is a pseudo-spectral 3D Hall-MHD code writen in FORTRAN, with corotating-expanding-box-model implemented. Brief notes on the numerical method are included as a PDF file here. A more detailed description can also be found in the paper: https://iopscience.iop.org/article/10.3847/1538-4357/ab5fce
+LAPS (UC**LA**-**P**seudo-**S**pectral) is a pseudo-spectral 3D Hall-MHD code writen in FORTRAN, with corotating-expanding-box-model implemented. Brief notes on the numerical method are included as a PDF file here. A more detailed description can also be found in the paper: https://iopscience.iop.org/article/10.3847/1538-4357/ab5fce
 
 To compile the code, MPI and FFTW are needed.
 
