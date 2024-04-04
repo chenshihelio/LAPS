@@ -6,8 +6,26 @@ To compile the code, MPI and FFTW are needed.
 
 Samples of Python scripts to read the output are included.
 
-The code is open-source and can be used freely. Please cite the following articles if you use the code to generate any publications:
+<hr>
+TODO: Instructions on how to set up initial conditions.
 
+<hr>
+Copyright 2024 Chen Shi
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+If you use the code to generate any publications, you should cite the following articles
 @article{shi2020propagation,
   title={Propagation of Alfv{\'e}n waves in the expanding solar wind with the fast--slow stream interaction},
   author={Shi, Chen and Velli, Marco and Tenerani, Anna and Rappazzo, Franco and R{\'e}ville, Victor},
@@ -18,10 +36,3 @@ The code is open-source and can be used freely. Please cite the following articl
   year={2020},
   publisher={IOP Publishing}
 }
-
-
-<hr>
-TODO: Instructions on how to set up initial conditions.
-
-------
-Copyright 2024 Chen Shi
