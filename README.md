@@ -41,6 +41,13 @@ Sometimes the users may want to modify the **&field** and **&pert** namelists to
 
 Samples of Python scripts to read the output are included.
 
+## TODO
+
+1. Build a better user manual.
+2. Implement different time-integral methods.
+3. Implement expanding-box-model to the incompressible code.
+
+
 <hr>
 Copyright 2024 Chen Shi
 
