@@ -18,10 +18,18 @@ You can download FFTW from https://www.fftw.org/download.html and install it fol
 After installing MPI and FFTW, LAPS is ready to be compiled. From terminal, go to the directory of the desired version of the code, i.e. "_/src_compressible_" for 3D compressible version, "_/src_compressible/2D_" for 2D compressible version, "_/src_incompressible_" for 3D incompressible version, and "_/src_incompressible/2D_" for 2D incompressible version. Then run 
 > make
 
-The only thing that you may need to modify in "**makefile**" is "**fftwpath**", which by default is "/usr/local". You need to change it to the location your FFTW is installed. In addition, depending on the specific FORTRAN compiler you use, you may need to change the "**-r8**" flag in "**OPTIONS**" to "**-fdefault-real-8**". If successfully compiled, a "**mhd.exe**" will be generated.
+The only thing that you may need to modify in "**makefile**" is "**fftwpath**", which by default is "**/usr/local**". You need to change it to the location your FFTW is installed. In addition, depending on the specific FORTRAN compiler you use, you may need to change the "**-r8**" flag in "**OPTIONS**" to "**-fdefault-real-8**". If successfully compiled, a "**mhd.exe**" will be generated.
 
 
 ## Run LAPS
+
+Move "**mhd.exe**" and "**mhd.input**" to the directory in which you want to run the code. All the outputs will be saved in the same directory. Then use the command
+> mpirun -np 8 mhd.exe > rec &
+
+to run the code. Here "**-np 8**" specifies that 8 cores will be used, "**> rec &**" tells the program to run in the backend and save all the terminal output to the file "**rec**".
+
+### How to configure mhd.input
+The "**mhd.input**" is the FORTRAN namelist file. It contains all the input parameters, including number of grid points, domain sizes, CFL condition constant to determine time step size, method for de-aliasing, adiabatic index, resistivity, etc. Most of the parameters have obvious meanings. In addition, the namelist "**&field**" and "**&pert**" specifies the selected case numbers ("**ifield**" and "**ipert**") and associated parameters for the initial condition. 
 
 Samples of Python scripts to read the output are included.
 <hr>
