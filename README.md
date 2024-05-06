@@ -15,8 +15,9 @@ You can download the latest OpenMPI from https://www.open-mpi.org/software/ompi/
 You can download FFTW from https://www.fftw.org/download.html and install it follow the instruction here https://www.fftw.org/fftw3_doc/Installation-and-Customization.html to install.
 
 ### Compile LAPS
-After installing MPI and FFTW, LAPS is ready to be compiled. From terminal, go to the directory of the desired version of the code, i.e. /src_compressible for 3D compressible version, /src_compressible/2D for 2D compressible version, /src_incompressible for 3D incompressible version, and /src_incompressible/2D for 2D incompressible version. Then run 
+After installing MPI and FFTW, LAPS is ready to be compiled. From terminal, go to the directory of the desired version of the code, i.e. "_/src_compressible_" for 3D compressible version, "_/src_compressible/2D_" for 2D compressible version, "_/src_incompressible_" for 3D incompressible version, and "_/src_incompressible/2D_" for 2D incompressible version. Then run 
 > make
+
 The only thing that you may need to modify in "**makefile**" is "**fftwpath**", which by default is "/usr/local". You need to change it to the location your FFTW is installed. In addition, depending on the specific FORTRAN compiler you use, you may need to change the "**-r8**" flag in "**OPTIONS**" to "**-fdefault-real-8**". If successfully compiled, a "**mhd.exe**" will be generated.
 
 
