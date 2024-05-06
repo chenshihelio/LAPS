@@ -1,11 +1,25 @@
 # LAPS
 
-LAPS (UC**LA**-**P**seudo-**S**pectral) is a pseudo-spectral 3D Hall-MHD code writen in FORTRAN, with corotating-expanding-box-model implemented. Brief notes on the numerical method are included as a PDF file here. A more detailed description can also be found in the paper: https://iopscience.iop.org/article/10.3847/1538-4357/ab5fce
+LAPS (UC**LA**-**P**seudo-**S**pectral) is a 3D MPI-parallelized Fourier-transform-based pseudo-spectral Hall-MHD code writen in FORTRAN, with corotating-expanding-box-model implemented. 
 
-To compile the code, MPI and FFTW are needed.
+Brief notes on the numerical method are included as a PDF file: /src_compressible/notes_MHD3D_EBM.pdf. Some more detailed description can be found in the paper: https://iopscience.iop.org/article/10.3847/1538-4357/ab5fce. A thorough description of all the numerical methods along with fundamental tests will be published as a standalone paper soon.
+
+## Installation & Compilation
+
+To compile the code, MPI and FFTW are necessary. 
+
+### OpenMPI
+You can download the latest OpenMPI from https://www.open-mpi.org/software/ompi/v5.0/. The instruction to install OpenMPI can be found here: https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/index.html.
+
+### FFTW
+You can download FFTW from https://www.fftw.org/download.html and install it follow the instruction here https://www.fftw.org/fftw3_doc/Installation-and-Customization.html to install.
+
+### Compile LAPS
+After installing MPI and FFTW, LAPS is ready to be compiled.
+
+## Run LAPS
 
 Samples of Python scripts to read the output are included.
-
 <hr>
 TODO: Instructions on how to set up initial conditions.
 
