@@ -12,7 +12,7 @@ To compile the code, MPI and FFTW are necessary.
 You can download the latest OpenMPI from https://www.open-mpi.org/software/ompi/v5.0/. The instruction to install OpenMPI can be found here: https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/index.html.
 
 ### FFTW
-You can download FFTW from https://www.fftw.org/download.html and install it follow the instruction here https://www.fftw.org/fftw3_doc/Installation-and-Customization.html to install.
+You can download FFTW from https://www.fftw.org/download.html and install it follow the instruction here https://www.fftw.org/fftw3_doc/Installation-and-Customization.html.
 
 ### Compile LAPS
 After installing MPI and FFTW, LAPS is ready to be compiled. From terminal, go to the directory of the desired version of the code, i.e. "_/src_compressible_" for 3D compressible version, "_/src_compressible/2D_" for 2D compressible version, "_/src_incompressible_" for 3D incompressible version, and "_/src_incompressible/2D_" for 2D incompressible version. Then run 
