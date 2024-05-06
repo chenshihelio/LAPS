@@ -28,12 +28,18 @@ Move "**mhd.exe**" and "**mhd.input**" to the directory in which you want to run
 
 to run the code. Here "**-np 8**" specifies that 8 cores will be used, "**> rec &**" tells the program to run in the backend and save all the terminal output to the file "**rec**".
 
-### How to configure mhd.input
+### mhd.input
 The "**mhd.input**" is the FORTRAN namelist file. It contains all the input parameters, including number of grid points, domain sizes, CFL condition constant to determine time step size, method for de-aliasing, adiabatic index, resistivity, etc. Most of the parameters have obvious meanings. In addition, the namelist "**&field**" and "**&pert**" specifies the selected case numbers ("**ifield**" and "**ipert**") and associated parameters for the initial condition. 
 
+### mhdinit.f90
+Typically, the only ".f90" file that the users need to modify is "mhdinit.f90". In this file, there are two subroutines, namely "subroutine background_fields_initialize" and "subroutine perturbation_initialize", which define the initial background field and initial perturbation respectively. In each of the two subroutines, we have defined six parameters "**ixmin, ixmax, iymin, iymax, izmin, izmax**" which are the ranges of indices of the main array **uu(ixmin:ixmax,iymin:iymax,izmin:izmax,1:8)**. The fourth dimension of **uu**, from 1 to 8, refers to "**rho, Ux, Uy, Uz, Bx, By, Bz, P**" respectively. Note that at initialization, we use the regular MHD fields instead of conserved quantities for convenience. The users may also need to use the spatial coordinates **xgrid(ixmin:ixmax), ygrid(iymin:iymax), zgrid(izmin:izmax)**. Note that, the domain is defined as [0,Lx]x[0,Ly]x[0,Lz].
+
+Sometimes the users may want to modify the **&field** and **&pert** namelists to add their own parameters. These namelists are defined in the main program "**mhd.f90**".
+
+
+## Read output
+
 Samples of Python scripts to read the output are included.
-<hr>
-TODO: Instructions on how to set up initial conditions.
 
 <hr>
 Copyright 2024 Chen Shi
