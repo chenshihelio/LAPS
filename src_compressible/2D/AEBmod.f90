@@ -1,6 +1,7 @@
 module AEBmod
     use mhdinit, only: wave_number_x,wave_number_y,k_square,ny,&
-        if_corotating,corotating_angle, cos_cor_ang, sin_cor_ang
+        if_corotating,corotating_angle, cos_cor_ang, sin_cor_ang,&
+        if_z_radial
     use parallel
 
 
@@ -104,8 +105,13 @@ module AEBmod
                                 (cos_cor_ang * radius0/radius)**2) + kx * ky * 2 * &
                                 cos_cor_ang * sin_cor_ang * (1 - (radius0/radius)**2 )
                         else 
-                            k_square(ix,iy,iz) = kx**2 + &
-                                (ky * radius0 / radius)**2
+                            if ( if_z_radial ) then
+                                k_square(ix,iy,iz) = (kx * radius0 / radius)**2 + &
+                                    (ky * radius0 / radius)**2
+                            else 
+                                k_square(ix,iy,iz) = kx**2 + &
+                                    (ky * radius0 / radius)**2
+                            endif 
                         endif
                     enddo
                 enddo

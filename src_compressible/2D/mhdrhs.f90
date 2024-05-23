@@ -8,7 +8,7 @@ module mhdrhs
         current_density,current_density_fourier, &
         if_resis, if_resis_exp, resistivity, &
         if_visc, if_visc_exp, viscosity, &
-        k_square, if_conserve_background
+        k_square, if_conserve_background, if_z_radial
     use AEBmod, only: radius0, radius, tau_exp
         
     use fftw 
@@ -91,10 +91,17 @@ module mhdrhs
                         !expanding term for energy density
                         !note: need to include the rho & velocity & magnetic field expansion
                         if (if_AEB) then 
-                            expand_term(ix,iy,iz,1) = -2 * adiabatic_index/(adiabatic_index-1) * p / tau_exp &
-                                - (2.0 * Bx**2 + By**2 + Bz**2 ) / tau_exp &
-                                - ( uu(ix,iy,iz,2) * ux + 2 * uu(ix,iy,iz,3) * uy &
-                                + 2 * uu(ix,iy,iz,4) * uz ) / tau_exp
+                            if (if_z_radial) then 
+                                expand_term(ix,iy,iz,1) = -2 * adiabatic_index/(adiabatic_index-1) * p / tau_exp &
+                                    - ( Bx**2 + By**2 + 2.0 * Bz**2 ) / tau_exp &
+                                    - ( 2 * uu(ix,iy,iz,2) * ux + 2 * uu(ix,iy,iz,3) * uy &
+                                    +  uu(ix,iy,iz,4) * uz ) / tau_exp
+                            else 
+                                expand_term(ix,iy,iz,1) = -2 * adiabatic_index/(adiabatic_index-1) * p / tau_exp &
+                                    - (2.0 * Bx**2 + By**2 + Bz**2 ) / tau_exp &
+                                    - ( uu(ix,iy,iz,2) * ux + 2 * uu(ix,iy,iz,3) * uy &
+                                    + 2 * uu(ix,iy,iz,4) * uz ) / tau_exp
+                            endif
                         endif
 
                         if (if_hall) then 
@@ -223,6 +230,9 @@ module mhdrhs
                     ky = cmplx(0,wave_number_y(iy)) * radius0/radius
                     do ix = ixmin,ixmax
                         kx = cmplx(0,wave_number_x(ix))
+                        if (if_AEB .and. if_z_radial) then 
+                            kx = kx * radius0/radius
+                        endif
 
                         if (if_AEB .and. if_corotating) then
                             kx = cmplx(0,wave_number_x(ix)) * cos_cor_ang + &
@@ -266,14 +276,26 @@ module mhdrhs
                             fnl(ix,iy,iz,1) = fnl(ix,iy,iz,1) - 2.0 * uu_fourier(ix,iy,iz,1) / tau_exp
 
                             !momentum -- need to include (drho/dt)_exp as we are using convervation form
-                            fnl(ix,iy,iz,2) = fnl(ix,iy,iz,2) - 2.0 * uu_fourier(ix,iy,iz,2) / tau_exp
-                            fnl(ix,iy,iz,3) = fnl(ix,iy,iz,3) - 3.0 * uu_fourier(ix,iy,iz,3) / tau_exp
-                            fnl(ix,iy,iz,4) = fnl(ix,iy,iz,4) - 3.0 * uu_fourier(ix,iy,iz,4) / tau_exp
+                            if (if_z_radial) then 
+                                fnl(ix,iy,iz,2) = fnl(ix,iy,iz,2) - 3.0 * uu_fourier(ix,iy,iz,2) / tau_exp
+                                fnl(ix,iy,iz,3) = fnl(ix,iy,iz,3) - 3.0 * uu_fourier(ix,iy,iz,3) / tau_exp
+                                fnl(ix,iy,iz,4) = fnl(ix,iy,iz,4) - 2.0 * uu_fourier(ix,iy,iz,4) / tau_exp
+                            else
+                                fnl(ix,iy,iz,2) = fnl(ix,iy,iz,2) - 2.0 * uu_fourier(ix,iy,iz,2) / tau_exp
+                                fnl(ix,iy,iz,3) = fnl(ix,iy,iz,3) - 3.0 * uu_fourier(ix,iy,iz,3) / tau_exp
+                                fnl(ix,iy,iz,4) = fnl(ix,iy,iz,4) - 3.0 * uu_fourier(ix,iy,iz,4) / tau_exp
+                            endif
 
                             !B-field
-                            fnl(ix,iy,iz,5) = fnl(ix,iy,iz,5) - 2.0 * uu_fourier(ix,iy,iz,5) / tau_exp
-                            fnl(ix,iy,iz,6) = fnl(ix,iy,iz,6) - 1.0 * uu_fourier(ix,iy,iz,6) / tau_exp
-                            fnl(ix,iy,iz,7) = fnl(ix,iy,iz,7) - 1.0 * uu_fourier(ix,iy,iz,7) / tau_exp
+                            if (if_z_radial) then
+                                fnl(ix,iy,iz,5) = fnl(ix,iy,iz,5) - 1.0 * uu_fourier(ix,iy,iz,5) / tau_exp
+                                fnl(ix,iy,iz,6) = fnl(ix,iy,iz,6) - 1.0 * uu_fourier(ix,iy,iz,6) / tau_exp
+                                fnl(ix,iy,iz,7) = fnl(ix,iy,iz,7) - 2.0 * uu_fourier(ix,iy,iz,7) / tau_exp  
+                            else
+                                fnl(ix,iy,iz,5) = fnl(ix,iy,iz,5) - 2.0 * uu_fourier(ix,iy,iz,5) / tau_exp
+                                fnl(ix,iy,iz,6) = fnl(ix,iy,iz,6) - 1.0 * uu_fourier(ix,iy,iz,6) / tau_exp
+                                fnl(ix,iy,iz,7) = fnl(ix,iy,iz,7) - 1.0 * uu_fourier(ix,iy,iz,7) / tau_exp  
+                            endif
 
                             !energy density
                             fnl(ix,iy,iz,8) = fnl(ix,iy,iz,8) + expand_term_fourier(ix,iy,iz,1)
@@ -344,6 +366,9 @@ module mhdrhs
                     ky = cmplx(0,wave_number_y(iy)) * radius0/radius
                     do ix = ixmin,ixmax
                         kx = cmplx(0,wave_number_x(ix))
+                        if (if_AEB .and. if_z_radial) then 
+                            kx = kx * radius0/radius
+                        endif
 
                         if (if_AEB .and. if_corotating) then
                             kx = cmplx(0,wave_number_x(ix)) * cos_cor_ang + &

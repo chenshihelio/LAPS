@@ -20,7 +20,7 @@ module mhdinit
     real :: adiabatic_index = 5./3. !, T_isothermal = 1.0
     logical :: if_resis = .false., if_AEB = .false.,if_corotating = .false.,&
         if_Hall = .false., if_resis_exp = .false., if_conserve_background = .false.,&
-        if_visc = .false., if_visc_exp = .false.
+        if_visc = .false., if_visc_exp = .false., if_z_radial = .false.
     real :: resistivity = 0.0, viscosity = 0.0, ion_inertial_length
     real :: corotating_angle = 0.0, cos_cor_ang, sin_cor_ang
 
@@ -403,12 +403,14 @@ module mhdinit
             real :: dbx, dby, dbz
             real,allocatable,dimension(:) :: phs, Br_sign
             integer,dimension(12) :: ir_arr 
-            integer :: n_m,ir,ikx
+            integer :: n_m,ir,ikx,iky
             real :: pph,kk,yup,ylow,B_sign
             real :: amplitude_slope_index,ik_slope
 
             real :: x_SB,y_SB,r_SB,Bx_SB,By_SB,Bz_SB,Br_SB,Bphi_SB,C_SB,phi_SB,&
                 p_SB, dpdy_SB
+
+            real :: dir_x, dir_y
 
             amplitude_slope_index = initial_spectral_slope/2.0
 
@@ -807,6 +809,66 @@ module mhdinit
                         enddo 
                     enddo
                 End Do
+
+
+            case(11)
+                ! for 2D EBM simulation with Z-axis being the radial direction
+                ! For comparison with (Matteini+2024)
+
+                nmode = 4 * mode_end * mode_end 
+                allocate(phs(nmode))
+                ir = 1
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs)
+
+
+                iMode = 1
+                do ikx = -mode_end, mode_end
+                    kx = ikx *  2 * pi/Lx
+                    do iky = -mode_end, mode_end
+                        ky = iky *  2 * pi/Ly
+                        if (ikx==0 .and. iky==0) then 
+                            cycle
+                        endif 
+
+                        if (floor(sqrt(real(ikx * ikx + iky * iky))) < mode_start .or. &
+                            ceiling(sqrt(real(ikx * ikx + iky * iky))) > mode_end) then 
+                            cycle 
+                        endif 
+
+                        ! take a random phase
+                        pph = phs(iMode) * 2 * Pi
+                        iMode = iMode + 1
+
+                        ! determine direction
+                        dir_x = ky / sqrt(kx**2 + ky**2)
+                        dir_y = -kx / sqrt(kx**2 + ky**2) 
+
+                        ! add perturbations
+                        iz = 1
+                        do iy=iymin,iymax 
+                            do ix=ixmin,ixmax
+                                ! bx
+                                uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + dir_x * db0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                                ! by
+                                uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + dir_y * db0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+
+                                ! ux
+                                uu(ix,iy,iz,2) = uu(ix,iy,iz,2) - dir_x * db0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                                ! uy
+                                uu(ix,iy,iz,3) = uu(ix,iy,iz,3) - dir_y * db0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                            enddo
+                        enddo
+                    enddo
+                enddo 
+
 
 
             case(14)
