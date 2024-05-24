@@ -2,7 +2,7 @@ module mhdinit
     use parallel
     implicit none
 
-    integer :: nx = 128, ny = 128, nz = 1, nvar = 8
+    integer :: nx = 128, ny = 128, nz = 1, nvar = 8, nextern = 1
 
     real :: pi = 3.141592653589793
 
@@ -20,7 +20,8 @@ module mhdinit
     real :: adiabatic_index = 5./3. !, T_isothermal = 1.0
     logical :: if_resis = .false., if_AEB = .false.,if_corotating = .false.,&
         if_Hall = .false., if_resis_exp = .false., if_conserve_background = .false.,&
-        if_visc = .false., if_visc_exp = .false., if_z_radial = .false.
+        if_visc = .false., if_visc_exp = .false., if_z_radial = .false.,&
+        if_external_force = .false.
     real :: resistivity = 0.0, viscosity = 0.0, ion_inertial_length
     real :: corotating_angle = 0.0, cos_cor_ang, sin_cor_ang
 
@@ -30,8 +31,10 @@ module mhdinit
     !rho, rho*(ux,uy,uz), bx,by,bz, e=(p/(k-1)+0.5*(rho*u^2+B^2))
     !note that in initiliazation, it is treated as primitive variables:
     !rho,ux,uy,uz,bx,by,bz,p
-    real, allocatable, dimension(:,:,:,:) :: uu,uu_prim,flux,expand_term,current_density
-    complex, allocatable, dimension(:,:,:,:) :: uu_fourier,flux_fourier,expand_term_fourier, current_density_fourier
+    real, allocatable, dimension(:,:,:,:) :: uu,uu_prim,flux,expand_term,current_density,&
+        external_force
+    complex, allocatable, dimension(:,:,:,:) :: uu_fourier,flux_fourier,expand_term_fourier,&
+        current_density_fourier,external_force_fourier
     
 
     !arrays storing the wave number information
@@ -139,6 +142,10 @@ module mhdinit
             if (if_Hall) then 
                 allocate(current_density(ixmin:ixmax, iymin:iymax, izmin:izmax,3))
             endif
+
+            if (if_external_force) then 
+                allocate(external_force(ixmin:ixmax, iymin:iymax, izmin:izmax,1:nextern))
+            endif 
             !--------------------------------------------------
 
 
@@ -166,6 +173,10 @@ module mhdinit
             if (if_Hall) then 
                 allocate(current_density_fourier(ixmin:ixmax, iymin:iymax, izmin:izmax, 3))
             endif
+
+            if (if_external_force) then 
+                allocate(external_force_fourier(ixmin:ixmax, iymin:iymax, izmin:izmax,1:nextern))
+            endif 
             !--------------------------------------------------
 
         end subroutine arrays_initialize

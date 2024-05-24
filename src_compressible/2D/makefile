@@ -14,7 +14,7 @@ ifeq ($(UNAME), Linux)
 	OPTIONS =   -O3  -r8 -I/opt/fftw/3.3.4/intel/mvapich2_ib/include -L/opt/fftw/3.3.4/intel/mvapich2_ib/lib -lfftw3
 endif
 
-OPTIONS = -O3 -r8 -I$(fftwpath)/include -L$(fftwpath)/lib -lfftw3
+OPTIONS = -O3 -fdefault-real-8 -I$(fftwpath)/include -L$(fftwpath)/lib -lfftw3
 
 EXE = mhd.exe 
 MAIN = mhd.f90 

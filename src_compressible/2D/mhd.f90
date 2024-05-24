@@ -35,7 +35,8 @@ program mhd
     namelist/field/ifield,B0,a0,current_sheet_width,shear_width,press0,U_fast,U_slow,&
         n_fast,n_slow,Bx0,By0,Bz0,jet_width,Vjet
     namelist/pert/ipert,delta_b,db0,nmode,in_out_ratio,initial_spectral_slope,&
-        B0_SB,dB_SB,R1_SB,H_SB,Rm_SB,Rd_SB,delta_rho,iMode, mode_start, mode_end
+        B0_SB,dB_SB,R1_SB,H_SB,Rm_SB,Rd_SB,delta_rho,iMode, mode_start, mode_end,&
+        if_external_force
     namelist/AEB/if_AEB,radius0,Ur0,if_corotating,corotating_angle,if_z_radial
     namelist/Hall/if_hall, ion_inertial_length
      ! Get the clock count at the beginning

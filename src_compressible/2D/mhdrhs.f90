@@ -8,7 +8,9 @@ module mhdrhs
         current_density,current_density_fourier, &
         if_resis, if_resis_exp, resistivity, &
         if_visc, if_visc_exp, viscosity, &
-        k_square, if_conserve_background, if_z_radial
+        k_square, if_conserve_background, if_z_radial, &
+        if_external_force, external_force, external_force_fourier,nextern,&
+        Lx,Ly,time,xgrid,ygrid
     use AEBmod, only: radius0, radius, tau_exp
         
     use fftw 
@@ -17,7 +19,7 @@ module mhdrhs
     implicit none 
 
     contains 
-
+    
         subroutine calc_flux
             !calculate the nonlinear fluxes in real space.
             implicit none 
@@ -122,6 +124,11 @@ module mhdrhs
                 enddo 
             enddo
 
+
+            ! if external force
+            if (if_external_force) then 
+                call calc_external_force_real
+            endif
         end subroutine calc_flux
 
 
@@ -204,6 +211,44 @@ module mhdrhs
 
                 !copy to flux_fourier
                 expand_term_fourier(:,:,:,1) = w_yx(:,:,:)
+            endif
+
+            if (if_external_force) then 
+                do ivar = 1, nextern
+                    !do fourier transform along x
+                    iymin = yi_offset(myid_i+1) + 1
+                    iymax = yi_offset(myid_i+1) + yi_size(myid_i+1)
+                    izmin = 1 
+                    izmax = 1
+
+                    do iz = izmin, izmax 
+                        do iy = iymin,iymax
+                            fx_aux(:) = external_force(:,iy,iz,ivar)
+                            call fftw_execute_dft_r2c(plan_fft_x, fx_aux, fx_aux_ft)
+                            w_xy(:,iy,iz) = fx_aux_ft(:) / nx !normalization
+                        enddo
+                    enddo
+
+                    !transpose x<-->y
+                    call transpose_xy
+
+                    ixmin = xi_offset(myid_i+1) + 1
+                    ixmax = xi_offset(myid_i+1) + xi_size(myid_i+1)
+                    izmin = 1 
+                    izmax = 1
+
+                    !do fourier transform along y
+                    do iz = izmin, izmax 
+                        do ix = ixmin, ixmax 
+                            fy_aux(:) = w_yx(ix,:,iz)
+                            call fftw_execute_dft(plan_fft_y,fy_aux,fy_aux_ft)
+                            w_yx(ix,:,iz) = fy_aux_ft(:) / ny 
+                        enddo
+                    enddo
+
+                    !copy to flux_fourier
+                    external_force_fourier(:,:,:,ivar) = w_yx(:,:,:)
+                enddo
             endif
         end subroutine transform_flux_real_to_fourier
 
@@ -321,6 +366,10 @@ module mhdrhs
                             fnl(ix,iy,iz,7) = fnl(ix,iy,iz,7) - resistivity * uu_fourier(ix,iy,iz,7) &
                                 * k_square(ix,iy,iz)
                         endif
+
+                        if (if_external_force) then 
+                            fnl(ix,iy,iz,7) = fnl(ix,iy,iz,7) + external_force_fourier(ix,iy,iz,1)
+                        endif 
                     enddo 
                 enddo 
             enddo
@@ -427,4 +476,57 @@ module mhdrhs
                 enddo
             enddo
         end subroutine calc_current_density_real
+
+        subroutine calc_external_force_real
+            ! user defined function to calculate external force
+            ! here is an example to add a forcing term for Bz
+            ! and the force is moving along y direction (Alfven wing)
+            implicit none 
+            integer :: ix,iy,iz
+            integer :: ixmin,ixmax,iymin,iymax,izmin,izmax 
+            real :: xc,yc,x_width,y_width,yc_mirror,func_x, dBdt
+
+            dBdt = 0.2
+
+            ixmin = 1
+            ixmax = nx 
+            iymin = yi_offset(myid_i+1) + 1
+            iymax = yi_offset(myid_i+1) + yi_size(myid_i+1)
+            izmin = 1
+            izmax = 1
+
+
+            xc = 0.5 * Lx 
+            x_width = 0.05 * Ly ! note: we let the shape isotropic
+
+            yc = mod(0.2*Ly + 0.3*time, Ly)
+            y_width = 0.05 * Ly 
+
+
+
+            do iz = izmin,izmax 
+                do iy = iymin, iymax 
+                    do ix = ixmin, ixmax 
+                        ! option 1: Gaussian in x
+                        func_x = exp(-((xgrid(ix)-xc)/(x_width))**2)
+
+                        ! ! option 2: a bi-polar perturbation in x
+                        ! func_x = exp(-((xgrid(ix)-xc)/(x_width))**2) * &
+                        !     tanh((xgrid(ix)-xc)/x_width) / 0.375261
+
+
+                        external_force(ix,iy,iz,1) = dBdt * func_x * exp(-((ygrid(iy)-yc)/(y_width))**2)
+
+                        ! in case the force center is near the upper/lower boundary
+                        yc_mirror = yc + Ly 
+                        external_force(ix,iy,iz,1) = external_force(ix,iy,iz,1) + &
+                            dBdt * func_x * exp(- ((ygrid(iy)-yc_mirror)/(y_width))**2)
+
+                        yc_mirror = yc - Ly 
+                        external_force(ix,iy,iz,1) = external_force(ix,iy,iz,1) + &
+                            dBdt * func_x * exp(- ((ygrid(iy)-yc_mirror)/(y_width))**2)
+                    enddo 
+                enddo 
+            enddo
+        end subroutine calc_external_force_real
 end module mhdrhs
