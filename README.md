@@ -2,7 +2,7 @@
 
 LAPS (UC**LA**-**P**seudo-**S**pectral) is a 3D MPI-parallelized Fourier-transform-based pseudo-spectral Hall-MHD code writen in FORTRAN, with corotating-expanding-box-model implemented. 
 
-Brief notes on the numerical method are included as a PDF file: /src_compressible/notes_MHD3D_EBM.pdf. Some more detailed description can be found in the paper: https://iopscience.iop.org/article/10.3847/1538-4357/ab5fce. A thorough description of all the numerical methods along with fundamental tests will be published as a standalone paper soon.
+Brief notes on the numerical method are included as a PDF file: /src_compressible/notes_MHD3D_EBM.pdf. Some more detailed description can be found in the paper: https://iopscience.iop.org/article/10.3847/1538-4357/ab5fce. A thorough description of all the numerical methods along with fundamental tests can be found in the paper: https://www.frontiersin.org/articles/10.3389/fspas.2024.1412905/full.
 
 ## Installation & Compilation
 
@@ -64,7 +64,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-If you use the code to generate any publications, you should cite the following articles
+If you use the code to generate any publications, you should cite the following articles:
+@article{shi11laps,
+  title={LAPS: An MPI-parallelized 3D pseudo-spectral Hall-MHD simulation code incorporating the expanding box model},
+  author={Shi, Chen and Tenerani, Anna and Rappazzo, Antonio Franco and Velli, Marco},
+  journal={Frontiers in Astronomy and Space Sciences},
+  volume={11},
+  pages={1412905},
+  publisher={Frontiers}
+}
+
 @article{shi2020propagation,
   title={Propagation of Alfv{\'e}n waves in the expanding solar wind with the fast--slow stream interaction},
   author={Shi, Chen and Velli, Marco and Tenerani, Anna and Rappazzo, Franco and R{\'e}ville, Victor},
