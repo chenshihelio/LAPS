@@ -65,6 +65,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 If you use the code to generate any publications, you should cite the following articles:
+
 @article{shi11laps,
   title={LAPS: An MPI-parallelized 3D pseudo-spectral Hall-MHD simulation code incorporating the expanding box model},
   author={Shi, Chen and Tenerani, Anna and Rappazzo, Antonio Franco and Velli, Marco},
