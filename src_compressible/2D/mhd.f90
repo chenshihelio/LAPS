@@ -17,6 +17,7 @@ program mhd
     real :: tout, toutrms, tlog
     integer :: iout = 0
     integer(kind=8) :: istep = 0
+    integer(kind=8) :: dstep_calcdt = 20
     real :: cfl = 0.5
     real :: max_divB = 0.0
     logical :: if_limit_dt_increase = .false.
@@ -230,7 +231,10 @@ program mhd
             tlog = tlog + dtlog
         end if
 
-        call vardt
+        !Update dt every (dstep_calcdt) steps
+        if ( (istep>0) .and. ( MODULO(istep,dstep_calcdt)==0)) then 
+            call vardt
+        endif
 
     End do Principal
     !----------------------------------------
