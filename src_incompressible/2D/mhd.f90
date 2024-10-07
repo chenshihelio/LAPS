@@ -17,8 +17,13 @@ program mhd
     real :: tout, toutrms, tlog
     integer :: iout = 0 
     integer(kind=8) :: istep = 0
+    integer(kind=8) :: dstep_calcdt = 20
     real :: cfl = 0.5
     logical :: if_limit_dt_increase = .false.
+
+    integer(kind=8) :: dstep_checknan = 200
+    integer :: isnanAll = 0
+
 
     integer(kind=8) :: clock_count_start, clock_count_end, clock_count_max, clock_count_rate
 
@@ -33,8 +38,9 @@ program mhd
     namelist/grid/nx,ny,Lx,Ly
     namelist/phys/adiabatic_index, if_resis,resistivity, if_visc,viscosity
     namelist/field/ifield,B0,a0,rho0,current_sheet_width,shear_width,press0,U_fast,U_slow,&
-        n_fast,n_slow,Bx0,By0
-    namelist/pert/ipert,delta_b,db0,nmode,in_out_ratio,initial_spectral_slope
+        n_fast,n_slow,Bx0,By0,Bz0
+    namelist/pert/ipert,delta_b,db0,dv0,nmode,in_out_ratio,initial_spectral_slope, &
+        iMode, mode_start, mode_end,correlation_vb
     namelist/AEB/if_AEB,radius0,Ur0,if_corotating,corotating_angle
     namelist/Hall/if_hall, ion_inertial_length
      ! Get the clock count at the beginning
@@ -236,7 +242,23 @@ program mhd
             tlog = tlog + dtlog
         end if
 
-        call vardt
+        !Update dt every (dstep_calcdt) steps
+        if ( (istep>0) .and. ( MODULO(istep,dstep_calcdt)==0)) then 
+            call vardt
+        endif
+
+
+        ! check nan every (dstep_checknan) steps
+        if ((istep>0) .and. ( MODULO(istep,dstep_checknan)==0) ) then 
+            call checkNan
+
+            if (isnanAll == 1) then 
+                if (ipe==0) then
+                    write(*,'(1x,a,f10.4)') "NaN encountered!!! Exit the program at t = ", time 
+                endif
+                exit Principal
+            endif 
+        endif
 
     End do Principal
     !----------------------------------------
@@ -677,4 +699,35 @@ program mhd
             call mpi_allreduce(divV_iter, max_divV,1,mpi_realtype,mpi_max,&
                 mpi_comm_world,ierr )
         end subroutine calc_max_divV_real
+
+
+        subroutine checkNan
+            integer :: is_Nan = 0
+            integer :: ix,iy,iz,iv
+            integer :: ixmin,ixmax,iymin,iymax,izmin,izmax
+
+            ixmin = 1
+            ixmax = nx 
+            iymin = yi_offset(myid_i+1) + 1
+            iymax = yi_offset(myid_i+1) + yi_size(myid_i+1)
+            izmin = 1
+            izmax = 1
+
+            do ix=ixmin,ixmax
+                do iy=iymin,iymax 
+                    do iz=izmin,izmax 
+                        do iv=1,nvar 
+                            if (isnan(uu(ix,iy,iz,iv)) == .True.) then 
+                                is_Nan = 1
+                                exit
+                            endif
+                        enddo 
+                    enddo 
+                enddo 
+            enddo 
+
+            call MPI_Allreduce(is_Nan, isNanAll, 1, MPI_INTEGER, &
+                MPI_MAX, MPI_COMM_WORLD, ierr)
+            
+        endsubroutine
 end program mhd

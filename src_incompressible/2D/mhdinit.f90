@@ -47,10 +47,12 @@ module mhdinit
 
 
     !user-defined----------------------
-    real :: delta_b,db0,in_out_ratio = 1.0, initial_spectral_slope = 2.0
-    real :: U_fast,U_slow,n_fast,n_slow,press0,shear_width,bx0,by0
+    real :: delta_b,db0,dv0,in_out_ratio = 1.0, initial_spectral_slope = 2.0, &
+        correlation_vb = 0.0
+    real :: U_fast,U_slow,n_fast,n_slow,press0,shear_width,bx0,by0,bz0
     real :: current_sheet_width = 0.075
     integer :: nmode = 16
+    integer :: iMode = 128, mode_start = 64, mode_end = 512
 
     contains 
 
@@ -199,6 +201,16 @@ module mhdinit
             uu(:,:,:,8) = press0 !note this is pressure
 
             select case(ifield)
+
+            Case(0)
+                !add uniform background magnetic field plus a jet
+                uu(:,:,:,1) = rho0
+
+                uu(:,:,:,5) = bx0 
+                uu(:,:,:,6) = by0 
+                uu(:,:,:,7) = bz0
+                
+                uu(:,:,:,8) = press0 
             
             Case(1)
                 !Add a double current sheet B0 = B0x(y)
@@ -381,11 +393,13 @@ module mhdinit
             integer :: ixmin,ixmax,iymin,iymax,izmin,izmax
 
             real :: dbx, dby, dbz
-            real,allocatable,dimension(:) :: phs, Br_sign
+            real,allocatable,dimension(:) :: phs, phs1, Br_sign
             integer,dimension(12) :: ir_arr
-            integer :: n_m,ir,ikx
-            real :: pph,kk,yup,ylow,B_sign
+            integer :: n_m,ir,ikx,iky
+            real :: pph,pph1,kk,yup,ylow,B_sign
             real :: amplitude_slope_index,ik_slope
+
+            real :: dir_x, dir_y
 
             amplitude_slope_index = initial_spectral_slope/2.0
 
@@ -694,6 +708,85 @@ module mhdinit
                         uu(:,iy,:,7) = uu(:,iy,:,7) + db0 * sin(pph)
                     enddo
                 enddo
+
+            case(11)
+                ! for 2D EBM simulation with Z-axis being the radial direction
+                ! For comparison with (Matteini+2024)
+
+                nmode = 4 * mode_end * mode_end 
+                allocate(phs(nmode))
+                ir = 1
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs)
+
+                allocate(phs1(nmode))
+                ir = 33
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs1)
+
+
+                iMode = 1
+                do ikx = -mode_end, mode_end
+                    kx = ikx *  2 * pi/Lx
+                    do iky = -mode_end, mode_end
+                        ky = iky *  2 * pi/Ly
+                        if (ikx==0 .and. iky==0) then 
+                            cycle
+                        endif 
+
+                        if (floor(sqrt(real(ikx * ikx + iky * iky))) < mode_start .or. &
+                            ceiling(sqrt(real(ikx * ikx + iky * iky))) > mode_end) then 
+                            cycle 
+                        endif 
+
+                        ! take a random phase
+                        pph = phs(iMode) * 2 * Pi
+                        pph1 = phs1(iMode) * 2 * Pi
+                        iMode = iMode + 1
+
+                        ! determine direction
+                        dir_x = ky / sqrt(kx**2 + ky**2)
+                        dir_y = -kx / sqrt(kx**2 + ky**2) 
+
+                        ! add perturbations
+                        iz = 1
+                        do iy=iymin,iymax 
+                            do ix=ixmin,ixmax
+                                !velocity -- uncorrelated with b
+                                uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
+                                    sqrt(1-correlation_vb**2) * dir_x * dv0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph1) 
+
+                                uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
+                                    sqrt(1-correlation_vb**2) * dir_y * dv0 *  &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph1) 
+
+                                ! magnetic field
+                                ! bx
+                                uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + dir_x * db0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                                ! by
+                                uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + dir_y * db0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+
+                                !velociy -- correlated with b
+                                ! ux
+                                uu(ix,iy,iz,2) = uu(ix,iy,iz,2) - correlation_vb * &
+                                    dir_x * dv0 * cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                                ! uy
+                                uu(ix,iy,iz,3) = uu(ix,iy,iz,3) - correlation_vb * &
+                                    dir_y * dv0 * cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                            enddo
+                        enddo
+                    enddo
+                enddo 
+
 
             case(14)
                 !for tearing instability
