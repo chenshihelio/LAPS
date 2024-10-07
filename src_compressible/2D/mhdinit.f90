@@ -47,8 +47,8 @@ module mhdinit
 
 
     !user-defined----------------------
-    real :: delta_b,db0,in_out_ratio = 1.0, initial_spectral_slope = 2.0, &
-        delta_rho
+    real :: delta_b,db0,dv0,in_out_ratio = 1.0, initial_spectral_slope = 2.0, &
+        delta_rho, correlation_vb = 0.0
     real :: U_fast,U_slow,n_fast,n_slow,press0,shear_width,bx0,by0,bz0
     real :: current_sheet_width = 0.075
     integer :: nmode = 16
@@ -412,10 +412,10 @@ module mhdinit
             integer :: ixmin,ixmax,iymin,iymax,izmin,izmax
 
             real :: dbx, dby, dbz
-            real,allocatable,dimension(:) :: phs, Br_sign
+            real,allocatable,dimension(:) :: phs, phs1, Br_sign
             integer,dimension(12) :: ir_arr 
             integer :: n_m,ir,ikx,iky
-            real :: pph,kk,yup,ylow,B_sign
+            real :: pph,pph1,kk,yup,ylow,B_sign
             real :: amplitude_slope_index,ik_slope
 
             real :: x_SB,y_SB,r_SB,Bx_SB,By_SB,Bz_SB,Br_SB,Bphi_SB,C_SB,phi_SB,&
@@ -835,6 +835,14 @@ module mhdinit
                 call random_seed(PUT=ir_arr)
                 call random_number(phs)
 
+                allocate(phs1(nmode))
+                ir = 33
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs1)
+
 
                 iMode = 1
                 do ikx = -mode_end, mode_end
@@ -852,6 +860,7 @@ module mhdinit
 
                         ! take a random phase
                         pph = phs(iMode) * 2 * Pi
+                        pph1 = phs1(iMode) * 2 * Pi
                         iMode = iMode + 1
 
                         ! determine direction
@@ -862,6 +871,16 @@ module mhdinit
                         iz = 1
                         do iy=iymin,iymax 
                             do ix=ixmin,ixmax
+                                !velocity -- uncorrelated with b
+                                uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
+                                    sqrt(1-correlation_vb**2) * dir_x * dv0 * &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph1) 
+
+                                uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
+                                    sqrt(1-correlation_vb**2) * dir_y * dv0 *  &
+                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph1) 
+
+                                ! magnetic field
                                 ! bx
                                 uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + dir_x * db0 * &
                                     cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
@@ -869,12 +888,13 @@ module mhdinit
                                 uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + dir_y * db0 * &
                                     cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
 
+                                !velociy -- correlated with b
                                 ! ux
-                                uu(ix,iy,iz,2) = uu(ix,iy,iz,2) - dir_x * db0 * &
-                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                                uu(ix,iy,iz,2) = uu(ix,iy,iz,2) - correlation_vb * &
+                                    dir_x * dv0 * cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
                                 ! uy
-                                uu(ix,iy,iz,3) = uu(ix,iy,iz,3) - dir_y * db0 * &
-                                    cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
+                                uu(ix,iy,iz,3) = uu(ix,iy,iz,3) - correlation_vb * &
+                                    dir_y * dv0 * cos(kx * xgrid(ix) + ky * ygrid(iy) + pph)
                             enddo
                         enddo
                     enddo
