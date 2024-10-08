@@ -866,19 +866,11 @@ module mhdinit
             implicit none 
 
             uu_prim(:,:,:,1:3) = uu(:,:,:,2:4) !ux,uy,uz
-            uu_prim(:,:,:,4) = uu(:,:,:,8)  !pressure
 
             !rho * u
             uu(:,:,:,2) = uu(:,:,:,1) * uu_prim(:,:,:,1)
             uu(:,:,:,3) = uu(:,:,:,1) * uu_prim(:,:,:,2)
             uu(:,:,:,4) = uu(:,:,:,1) * uu_prim(:,:,:,3)
-
-            !energy density
-            uu(:,:,:,8) = uu_prim(:,:,:,4)/(adiabatic_index-1) + &
-                0.5*(uu(:,:,:,1)*( (uu_prim(:,:,:,1))**2 + &
-                (uu_prim(:,:,:,2))**2 + (uu_prim(:,:,:,3))**2) + &
-                (uu(:,:,:,5))**2 + (uu(:,:,:,6))**2 + &
-                (uu(:,:,:,7))**2 )
         end subroutine 
 
 end module mhdinit

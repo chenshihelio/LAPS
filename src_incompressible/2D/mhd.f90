@@ -89,7 +89,6 @@ program mhd
         call perturbation_initialize
     endif
 
-
     call initial_calc_conserve_variable
     call transform_uu_real_to_fourier 
     !----------------------------------------------
