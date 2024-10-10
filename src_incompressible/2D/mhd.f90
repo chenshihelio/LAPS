@@ -14,9 +14,10 @@ program mhd
 
     integer :: ix,iy,iz, ivar, ixmin,ixmax,iymin,iymax,izmin,izmax
     real :: dt, tmax, dtout, dtrms, dtlog
+    real :: delta_clocktime_output = 60 * 25, clocktime, clocktime_output
     real :: tout, toutrms, tlog
     integer :: iout = 0 
-    integer(kind=8) :: istep = 0
+    integer(kind=8) :: istep = 0, dstep_checksave = 40
     integer(kind=8) :: dstep_calcdt = 20
     real :: cfl = 0.5
     logical :: if_limit_dt_increase = .false.
@@ -128,6 +129,9 @@ program mhd
     endif 
     call output_rms(time)
     call output_AEB(time)
+
+    clocktime = 0
+    clocktime_output = clocktime + delta_clocktime_output
     !------------------------------------------
 
     !main loop ------------------------------
@@ -159,6 +163,28 @@ program mhd
             call output_AEB(time)
             toutrms = toutrms + dtrms
         end if
+
+        ! if clocktime > clocktime_output: save a file
+        if ( (istep>0) .and. ( MODULO(istep,dstep_checksave)==0)) then 
+            if_savefile = 0
+            if (ipe==0) then 
+                call system_clock(clock_count_end, clock_count_rate, clock_count_max )
+                ! calculate clock time in second
+                clocktime = real(clock_count_end - clock_count_start) / real(clock_count_rate)
+
+                if (clocktime >= clocktime_output) then
+                    write(*,'(3x,a,f15.2,2x,a,2x,f10.4)') 'OUTPUT for backup at real time (sec):',clocktime, ', time = ', time
+                    if_savefile = 1
+                endif
+            endif
+
+            call MPI_Bcast(if_savefile, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+
+            if (if_savefile==1) then 
+                call output_uu(999,time)
+                clocktime_output = clocktime_output + delta_clocktime_output
+            endif
+        endif
 
 
         if (dt < 0.00000001) then
