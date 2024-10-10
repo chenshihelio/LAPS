@@ -15,6 +15,7 @@ program mhd
     integer :: ix,iy,iz, ivar, ixmin,ixmax,iymin,iymax,izmin,izmax
     real :: dt, tmax, dtout, dtrms, dtlog
     real :: delta_clocktime_output = 60 * 25, clocktime, clocktime_output
+    integer :: if_savefile = 0
     real :: tout, toutrms, tlog
     integer :: iout = 0 
     integer(kind=8) :: istep = 0, dstep_checksave = 40
