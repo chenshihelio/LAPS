@@ -128,6 +128,9 @@ program mhd
         toutrms = dtrms * (floor(time/dtrms) + 1)
         tlog = dtlog * (floor(time/dtlog) + 1)
 
+        if (ipe==0) then 
+            write(*,'(2x,a,i3,a,f10.4)') 'Next output index = ', iout, ', next output time = ', tout
+        endif
     endif
 
     !call calc_max_divB

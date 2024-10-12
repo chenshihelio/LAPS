@@ -18,7 +18,8 @@ module restart
         implicit none 
 
         integer :: i, file_handle, data_size
-        character(6) :: fname='      '
+        !character(6) :: fname='      '
+        character(7) :: fname='restart'
         real(kind=4) :: t_restart_temp
 
         ! if (n_start ==0  ) write(fname,'(a3,i3)')  'out000'
@@ -28,8 +29,7 @@ module restart
 
         !read time
         if (ipe==0) then 
-            ! open(unit=10,file= fname // '.dat',form='unformatted',&
-            open(unit=10,file= 'restart.dat',form='unformatted',&
+            open(unit=10,file= fname // '.dat',form='unformatted',&
                 status='old',action='read')
                 read(10) t_restart_temp
             close(10)
