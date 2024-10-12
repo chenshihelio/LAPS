@@ -106,17 +106,29 @@ program mhd
 
     dtlog = min(dtout, dtrms) / 10.0
 
-    time = t_restart
-    iout = n_start
-    tout = time + dtout
-    toutrms = time + dtrms
-    tlog = time + dtlog
+    
+    if (if_restart == .False.) then
+        ! out000.dat
+        ! time = 0.0
+        ! iout = 0
+        if (ipe==0) then
+            write(*,format_output_log) 'OUTPUT at time:', time, ',dt = ', dt
+        endif
+        call output_uu(iout, time)
 
-    if (ipe==0) then
-        write(*,format_output_log) 'OUTPUT at time:', time, ',dt = ', dt
+        tout = time + dtout
+        toutrms = time + dtrms
+        tlog = time + dtlog
+        iout = iout + 1
+    else 
+        ! if restart, need to calculate the correct time for next otput
+        time = t_restart
+        iout = floor(time/dtout) + 1
+        tout = dtout * iout
+        toutrms = dtrms * (floor(time/dtrms) + 1)
+        tlog = dtlog * (floor(time/dtlog) + 1)
+
     endif
-    call output_uu(iout, time)
-    iout = iout + 1
 
     !call calc_max_divB
     call calc_divB_real

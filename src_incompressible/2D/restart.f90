@@ -21,14 +21,15 @@ module restart
         character(6) :: fname='      '
         real(kind=4) :: t_restart_temp
 
-        if (n_start ==0  ) write(fname,'(a3,i3)')  'out000'
-        if (n_start <1000) write(fname,'(a3,i3)')  'out' ,n_start  
-        if (n_start <100 ) write(fname,'(a4,i2)')  'out0' ,n_start
-        if (n_start < 10 ) write(fname,'(a5,i1)')  'out00',n_start
+        ! if (n_start ==0  ) write(fname,'(a3,i3)')  'out000'
+        ! if (n_start <1000) write(fname,'(a3,i3)')  'out' ,n_start  
+        ! if (n_start <100 ) write(fname,'(a4,i2)')  'out0' ,n_start
+        ! if (n_start < 10 ) write(fname,'(a5,i1)')  'out00',n_start
 
         !read time
         if (ipe==0) then 
-            open(unit=10,file= fname // '.dat',form='unformatted',&
+            ! open(unit=10,file= fname // '.dat',form='unformatted',&
+            open(unit=10,file= 'restart.dat',form='unformatted',&
                 status='old',action='read')
                 read(10) t_restart_temp
             close(10)
