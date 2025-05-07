@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="LAPS Logo" width="200"/>
+</p>
+
 # LAPS
 
 LAPS (UC**LA**-**P**seudo-**S**pectral) is a 3D MPI-parallelized Fourier-transform-based pseudo-spectral Hall-MHD code writen in FORTRAN, with corotating-expanding-box-model implemented. 
