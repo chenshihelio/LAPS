@@ -107,7 +107,7 @@ program mhd
     dtlog = min(dtout, dtrms) / 10.0
 
     
-    if (if_restart == .False.) then
+    if (if_restart .eqv. .False.) then
         ! out000.dat
         ! time = 0.0
         ! iout = 0
@@ -758,7 +758,7 @@ program mhd
                 do iy=iymin,iymax 
                     do iz=izmin,izmax 
                         do iv=1,nvar 
-                            if (isnan(uu(ix,iy,iz,iv)) == .True.) then 
+                            if (isnan(uu(ix,iy,iz,iv)) .eqv. .True.) then 
                                 is_Nan = 1
                                 exit
                             endif
