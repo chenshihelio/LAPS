@@ -45,8 +45,10 @@ module mhdinit
 
     !user-defined-----------------------------------------
     real :: U_fast,U_slow,n_fast,n_slow,press0,shear_width,bx0,by0,&
-        bz0,db0,dbx,dby,dbz, in_out_ratio = 1.0, dv0 = 0, drho0 = 0
-    integer :: nmode = 16, nmodex = 16, nmodey = 16,nmodez = 16
+        bz0,db0,dbx,dby,dbz, in_out_ratio = 1.0, dv0 = 0, drho0 = 0, &
+        correlation_vb = 0
+    integer :: nmode = 16, nmodex = 16, nmodey = 16,nmodez = 16, &
+        mode_start = 64, mode_end = 512, iMode = 1
 
     real :: jet_width=1.0, Vjet = 0.3 
     integer :: wave_number_jet = 1
@@ -311,7 +313,7 @@ module mhdinit
             real,dimension(3) :: direction_perp
             real :: kmod, B0mod, k_radius
             real :: pph, modulation_y, modulation_y_deriv, ylow,ycent,yup
-            real :: ph_z, ph_y, ph_x, ph0, ph1, ph2, correlation_vb = 0
+            real :: ph_z, ph_y, ph_x, ph0, ph1, ph2, ph_xy
             real :: p_SB, q_SB, dpdr_SB, Bz0_SB,x_SB,y_SB,z_SB,r_SB,&
                     Bx_SB,By_SB,Bz_SB,Br_SB,Bphi_SB,C_SB,phi_SB
 
@@ -697,7 +699,7 @@ module mhdinit
                 ! random perturbations in U, B, and rho
 
 
-                correlation_vb = -0.05
+                ! correlation_vb = -0.05
 
                 nmode = (2 * nmodex + 1) * (2 * nmodez+1)  * (2 * nmodey+1)
                 allocate(phs(nmode),phs1(nmode),phs2(nmode))
@@ -926,6 +928,309 @@ module mhdinit
                 !         enddo
                 !     enddo
                 ! enddo
+
+
+            Case(71)
+                !3D perturbations for turbulence simulation
+                ! random perturbations in U, B, and rho
+                ! difference from case 7: Assume B0 is along z-axis
+                ! so we need special treatment when k//B0 to avoid singularity.
+
+
+                ! correlation_vb = -0.05
+
+                nmode = (2 * nmodex + 1) * (2 * nmodez+1)  * (2 * nmodey+1)
+                allocate(phs(nmode),phs1(nmode),phs2(nmode))
+
+                ir = 1
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs)
+                phs(:) = phs(:) * 2 * pi 
+
+                ir = 16
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs1)
+                phs1(:) = phs1(:) * 2 * pi 
+
+                ir = 32
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs2)
+                phs2(:) = phs2(:) * 2 * pi 
+            
+
+                do ikx=0,nmodex 
+                    kx = ikx * 2 * pi / Lx
+
+                    do iky=-nmodey,nmodey 
+                        ky = iky * 2 * pi / Ly 
+
+                        do ikz=-nmodez,nmodez 
+                            kz = ikz * 2 * pi / Lz 
+
+                            if ((ikx==0 .and. iky<0) .or. (ikx==0 .and. iky==0 .and. ikz<=0)) then 
+                                cycle 
+                            endif
+
+                            k_radius = sqrt(real(ikx**2 + iky**2 + ikz**2))
+
+                            ! istropic condition
+                            if (k_radius>max(nmodex,nmodey,nmodez)) then 
+                                cycle
+                            endif 
+
+                            ph0 = phs( 1 + ((ikx + nmodex) * (2 * nmodey+1) + iky + nmodey) &
+                                * (2 * nmodez + 1) + ikz + nmodez)
+
+                            ph1 = phs1( 1 + ((ikx + nmodex) * (2 * nmodey+1) + iky + nmodey) &
+                                * (2 * nmodez + 1) + ikz + nmodez)
+
+                            ph2 = phs2( 1 + ((ikx + nmodex) * (2 * nmodey+1) + iky + nmodey) &
+                                * (2 * nmodez + 1) + ikz + nmodez)
+
+                            if ((kx==0) .and. (ky==0)) then 
+                                ! special treatment for k//B0 case (B0 along z-axis)
+                                ! we will randomly generate an angle to determine 
+                                !the direction of perturbation in the xy plane
+                                call random_seed(PUT=ir_arr)
+                                call random_number(ph_xy)
+                                ph_xy = ph_xy * 2 * pi
+
+                                direction_perp(1) = cos(ph_xy)
+                                direction_perp(2) = sin(ph_xy)
+                                direction_perp(3) = 0.0
+
+
+                            else
+                                ! general case when k is not parallel to B0, same as case(7)
+                                ! calculate direction perp. to k and B
+                                kmod = sqrt(kx**2 + ky**2 + kz**2)
+                                B0mod = sqrt(bx0**2 + by0**2 + bz0**2)
+                                if ((kmod .eq. 0) .or. (B0mod .eq. 0)) then 
+                                    write(*,*) 'When intializing perturbation, |k|=0 or |B0|=0!!!'
+                                    call Exit(0)
+                                endif
+
+                                direction_perp(1) = (ky * bz0 - kz * by0)/kmod/B0mod 
+                                direction_perp(2) = (kz * bx0 - kx * bz0)/kmod/B0mod
+                                direction_perp(3) = (kx * by0 - ky * bx0)/kmod/B0mod
+                            endif
+
+                            do iz = izmin, izmax 
+                                ph_z = kz*zgrid(iz)
+                                do iy = iymin, iymax
+                                    ph_y = ky*ygrid(iy) 
+                                    do ix = ixmin, ixmax
+                                        ph_x = kx*xgrid(ix)
+
+                                        !velocity -- uncorrelated with b
+                                        pph = ph_x + ph_y + ph_z + ph0
+
+                                        uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(1)
+
+                                        uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(2)
+
+                                        uu(ix,iy,iz,4) = uu(ix,iy,iz,4) + &
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(3)
+
+                                        ! magnetic field
+                                        pph = ph_x + ph_y + ph_z + ph1
+
+                                        uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + db0 * cos(pph) &
+                                            /sqrt(k_radius**3) * direction_perp(1)
+
+                                        uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + db0 * cos(pph) &
+                                            /sqrt(k_radius**3) * direction_perp(2)
+
+                                        uu(ix,iy,iz,7) = uu(ix,iy,iz,7) + db0 * cos(pph) &
+                                            /sqrt(k_radius**3) * direction_perp(3)
+
+                                        ! velocity correlated
+
+                                        uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
+                                            correlation_vb * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(1)
+
+                                        uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
+                                            correlation_vb * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(2)
+
+                                        uu(ix,iy,iz,4) = uu(ix,iy,iz,4) + &
+                                            correlation_vb * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(3)
+
+                                    enddo
+                                enddo
+                            enddo
+
+                        enddo
+                    enddo
+                enddo
+
+
+            Case(72)
+                !3D perturbations for turbulence simulation
+                ! random perturbations in U, B, and rho
+                ! difference from case 71: 
+                ! we add fluctuations in a spherical shell in k space
+
+
+                !nmode = (2 * nmodex + 1) * (2 * nmodez+1)  * (2 * nmodey+1)
+                nmode = 8 * mode_end * mode_end * mode_end
+                allocate(phs(nmode),phs1(nmode),phs2(nmode))
+
+                ir = 1
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs)
+                phs(:) = phs(:) * 2 * pi 
+
+                ir = 16
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs1)
+                phs1(:) = phs1(:) * 2 * pi 
+
+                ir = 32
+                do ix=1,12
+                    ir_arr(ix) = ir + 100
+                enddo
+                call random_seed(PUT=ir_arr)
+                call random_number(phs2)
+                phs2(:) = phs2(:) * 2 * pi 
+            
+                iMode = 1
+                do ikx = -mode_end, mode_end
+                    kx = ikx * 2 * pi / Lx
+
+                    do iky = -mode_end, mode_end
+                        ky = iky * 2 * pi / Ly 
+
+                        do ikz=-mode_end, mode_end
+                            kz = ikz * 2 * pi / Lz 
+
+                            if (ikx==0 .and. iky==0 .and. ikz==0) then 
+                                cycle
+                            endif 
+
+                            k_radius = sqrt(real(ikx**2 + iky**2 + ikz**2))
+
+                            ! istropic condition
+                            if (floor(k_radius)<mode_start .or. ceiling(k_radius)>mode_end) then 
+                                cycle
+                            endif 
+
+                            ph0 = phs(iMode)
+
+                            ph1 = phs1(iMode)
+
+                            ph2 = phs2(iMode)
+
+                            iMode = iMode + 1
+
+                            if ((ikx==0) .and. (iky==0)) then 
+                                ! special treatment for k//B0 case (B0 along z-axis)
+                                ! we will randomly generate an angle to determine 
+                                !the direction of perturbation in the xy plane
+                                ! call random_seed(PUT=ir_arr)
+                                ! call random_number(ph_xy)
+                                ph_xy = ph_xy * 2 * pi
+
+                                direction_perp(1) = cos(ph_xy)
+                                direction_perp(2) = sin(ph_xy)
+                                direction_perp(3) = 0.0
+
+
+                            else
+                                ! general case when k is not parallel to B0, same as case(7)
+                                ! calculate direction perp. to k and B
+                                kmod = sqrt(kx**2 + ky**2 + kz**2)
+                                B0mod = sqrt(bx0**2 + by0**2 + bz0**2)
+                                if ((kmod .eq. 0) .or. (B0mod .eq. 0)) then 
+                                    write(*,*) 'When intializing perturbation, |k|=0 or |B0|=0!!!'
+                                    call Exit(0)
+                                endif
+
+                                direction_perp(1) = (ky * bz0 - kz * by0)/kmod/B0mod 
+                                direction_perp(2) = (kz * bx0 - kx * bz0)/kmod/B0mod
+                                direction_perp(3) = (kx * by0 - ky * bx0)/kmod/B0mod
+                            endif
+
+                            do iz = izmin, izmax 
+                                ph_z = kz*zgrid(iz)
+                                do iy = iymin, iymax
+                                    ph_y = ky*ygrid(iy) 
+                                    do ix = ixmin, ixmax
+                                        ph_x = kx*xgrid(ix)
+
+                                        !velocity -- uncorrelated with b
+                                        pph = ph_x + ph_y + ph_z + ph0
+
+                                        uu(ix,iy,iz,2) = uu(ix,iy,iz,2) + &
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(1)
+
+                                        uu(ix,iy,iz,3) = uu(ix,iy,iz,3) + &
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(2)
+
+                                        uu(ix,iy,iz,4) = uu(ix,iy,iz,4) + &
+                                            sqrt(1-correlation_vb**2) * dv0 * cos(pph) &
+                                            / sqrt(k_radius**3) * direction_perp(3)
+
+                                        ! magnetic field
+                                        pph = ph_x + ph_y + ph_z + ph1
+
+                                        uu(ix,iy,iz,5) = uu(ix,iy,iz,5) + db0 * cos(pph) &
+                                             / sqrt(k_radius**3) * direction_perp(1)
+
+                                        uu(ix,iy,iz,6) = uu(ix,iy,iz,6) + db0 * cos(pph) &
+                                             / sqrt(k_radius**3) * direction_perp(2)
+
+                                        uu(ix,iy,iz,7) = uu(ix,iy,iz,7) + db0 * cos(pph) &
+                                             / sqrt(k_radius**3) * direction_perp(3)
+
+                                        ! velocity correlated
+
+                                        uu(ix,iy,iz,2) = uu(ix,iy,iz,2) - &
+                                            correlation_vb * dv0 * cos(pph) &
+                                             / sqrt(k_radius**3) * direction_perp(1)
+
+                                        uu(ix,iy,iz,3) = uu(ix,iy,iz,3) - &
+                                            correlation_vb * dv0 * cos(pph) &
+                                             / sqrt(k_radius**3) * direction_perp(2)
+
+                                        uu(ix,iy,iz,4) = uu(ix,iy,iz,4) - &
+                                            correlation_vb * dv0 * cos(pph) &
+                                             / sqrt(k_radius**3) * direction_perp(3)
+
+                                    enddo
+                                enddo
+                            enddo
+
+                        enddo
+                    enddo
+                enddo
+
+
+
 
 
             case(8)

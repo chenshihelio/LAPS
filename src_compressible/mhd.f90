@@ -36,7 +36,8 @@ program mhd
     namelist/field/ifield,B0,a0,shear_width,press0,U_fast,U_slow,&
         n_fast,n_slow,Bx0,By0,Bz0,jet_width,Vjet
     namelist/pert/ipert,db0,nmode,nmodex,nmodey,nmodez,dbx,dbz,in_out_ratio, &
-        dv0,drho0,wave_number_jet,B0_SB,dB_SB,R0_SB,R1_SB,H_SB,Rm_SB,Rd_SB
+        dv0,drho0,correlation_vb, mode_start, mode_end, &
+        wave_number_jet,B0_SB,dB_SB,R0_SB,R1_SB,H_SB,Rm_SB,Rd_SB
     namelist/AEB/if_AEB,radius0,Ur0,if_corotating,corotating_angle
     namelist/Hall/if_hall, ion_inertial_length
 
